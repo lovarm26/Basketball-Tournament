@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💜 LOVA PageantPro v2.1 • Full Scoring System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        body { font-family: 'Poppins', system-ui, sans-serif; }
+        .tab-button.active { border-bottom: 4px solid #a855f7; color: #a855f7; }
+        .score-input { width: 68px; text-align: center; font-size: 1.1rem; font-weight: 600; }
+        .score-input:focus { outline: none; border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3); }
+        .table-header { background: linear-gradient(90deg, #6b21a8, #a855f7); }
+        .contestant-photo { width: 64px; height: 64px; object-fit: cover; border-radius: 9999px; border: 3px solid #c026d3; box-shadow: 0 10px 15px -3px rgb(168 85 247); }
+        .modal { animation: modalPop 0.3s ease-out; }
+        @keyframes modalPop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-950 to-purple-950 text-white min-h-screen">
+    <div class="max-w-screen-2xl mx-auto p-6">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div class="flex items-center gap-x-4">
+                <div class="w-14 h-14 bg-gradient-to-br from-pink-500 to-purple-600 rounded-3xl flex items-center justify-center text-4xl shadow-xl">👑</div>
+                <div>
+                    <h1 class="text-5xl font-bold tracking-tighter">LOVA PageantPro <span class="text-purple-400 text-2xl">v2.1</span></h1>
+                    <p class="text-purple-300 text-xl">Talent • Judge Login • PDF • Excel Import • <span class="text-pink-400 font-semibold">Contestant Photos</span></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-x-3">
+                <button onclick="showJudgeLoginModal()" 
+                        class="flex items-center gap-x-2 bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 rounded-2xl font-medium hover:scale-105 transition-all">
+                    <i class="fas fa-user-shield"></i> 
+                    <span id="current-judge-display" class="font-semibold">JUDGE LOGIN</span>
+                </button>
+
+                <button onclick="saveData()" 
+                        class="flex items-center gap-x-2 bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-2xl transition-all font-medium">
+                    <i class="fas fa-save"></i> SAVE
+                </button>
+                <button onclick="loadData()" 
+                        class="flex items-center gap-x-2 bg-gray-700 hover:bg-gray-800 px-6 py-3 rounded-2xl transition-all font-medium">
+                    <i class="fas fa-upload"></i> LOAD
+                </button>
+                <button onclick="exportToCSV()" 
+                        class="flex items-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-2xl transition-all font-medium">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+                <button onclick="importCSV()" 
+                        class="flex items-center gap-x-2 bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-2xl transition-all font-medium">
+                    <i class="fas fa-file-import"></i> IMPORT
+                </button>
+                <button onclick="resetAll()" 
+                        class="flex items-center gap-x-2 bg-red-600 hover:bg-red-700 px-6 py-3 rounded-2xl transition-all font-medium text-sm">
+                    <i class="fas fa-trash"></i> RESET
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex bg-white/10 backdrop-blur-xl rounded-3xl p-1 mb-8 w-fit shadow-2xl">
+            <button onclick="showTab(0)" id="tab-0" class="tab-button active px-8 py-4 text-lg font-semibold rounded-3xl flex items-center gap-x-2">
+                <i class="fas fa-users"></i> Contestants
+            </button>
+            <button onclick="showTab(1)" id="tab-1" class="tab-button px-8 py-4 text-lg font-semibold rounded-3xl flex items-center gap-x-2">
+                <i class="fas fa-gavel"></i> Judges
+            </button>
+            <button onclick="showTab(2)" id="tab-2" class="tab-button px-8 py-4 text-lg font-semibold rounded-3xl flex items-center gap-x-2">
+                <i class="fas fa-clipboard-list"></i> Score Entry
+            </button>
+            <button onclick="showTab(3)" id="tab-3" class="tab-button px-8 py-4 text-lg font-semibold rounded-3xl flex items-center gap-x-2">
+                <i class="fas fa-trophy"></i> Results
+            </button>
+            <button onclick="showTab(4)" id="tab-4" class="tab-button px-8 py-4 text-lg font-semibold rounded-3xl flex items-center gap-x-2">
+                <i class="fas fa-book"></i> How-To Guide
+            </button>
+        </div>
+
+        <!-- TAB 0: Contestants (NOW WITH PHOTOS) -->
+        <div id="panel-0" class="tab-panel">
+            <div class="bg-white/10 backdrop-blur-xl rounded-3xl p-8">
+                <div class="flex gap-4 mb-6">
+                    <input id="contestant-input" type="text" 
+                           class="flex-1 bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 text-lg"
+                           placeholder="Contestant name (e.g. Miss Tacloban 2026)">
+                    <button onclick="addContestant()" 
+                            class="bg-gradient-to-r from-purple-500 to-pink-500 px-10 rounded-2xl font-semibold hover:scale-105 transition-transform">
+                        + ADD CONTESTANT
+                    </button>
+                </div>
+                <table class="w-full">
+                    <thead>
+                        <tr class="table-header text-white">
+                            <th class="text-left px-6 py-5 rounded-tl-3xl w-20">PHOTO</th>
+                            <th class="text-left px-6 py-5">No.</th>
+                            <th class="text-left px-6 py-5">CONTESTANT NAME</th>
+                            <th class="w-32 px-6 py-5 rounded-tr-3xl">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contestants-body" class="divide-y divide-white/10 text-lg"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 1: Judges -->
+        <div id="panel-1" class="tab-panel hidden">
+            <div class="bg-white/10 backdrop-blur-xl rounded-3xl p-8">
+                <div class="flex gap-4 mb-6">
+                    <input id="judge-input" type="text" 
+                           class="flex-1 bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 text-lg"
+                           placeholder="Judge name">
+                    <button onclick="addJudge()" 
+                            class="bg-gradient-to-r from-purple-500 to-pink-500 px-10 rounded-2xl font-semibold hover:scale-105 transition-transform">
+                        + ADD JUDGE
+                    </button>
+                </div>
+                <table class="w-full">
+                    <thead>
+                        <tr class="table-header text-white">
+                            <th class="text-left px-6 py-5 rounded-tl-3xl">Judge #</th>
+                            <th class="text-left px-6 py-5">NAME</th>
+                            <th class="w-24 px-6 py-5 rounded-tr-3xl">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="judges-body" class="divide-y divide-white/10 text-lg"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: SCORE ENTRY -->
+        <div id="panel-2" class="tab-panel hidden">
+            <div id="judge-notice" class="bg-purple-600/30 text-white px-6 py-4 rounded-3xl mb-6 text-center text-lg font-medium hidden"></div>
+            <div class="bg-white/10 backdrop-blur-xl rounded-3xl p-8 overflow-x-auto">
+                <table class="w-full min-w-[1700px]">
+                    <thead>
+                        <tr class="table-header text-white">
+                            <th class="sticky left-0 bg-gradient-to-r from-purple-700 to-pink-600 px-8 py-6 text-left w-80 z-10">CONTESTANT</th>
+                            <th class="px-4 py-6 text-center" style="min-width:140px">Private Interview<br><span class="text-xs opacity-75">(30)</span></th>
+                            <th class="px-4 py-6 text-center" style="min-width:140px">Swimsuit<br><span class="text-xs opacity-75">(20)</span></th>
+                            <th class="px-4 py-6 text-center" style="min-width:140px">Evening Gown<br><span class="text-xs opacity-75">(20)</span></th>
+                            <th class="px-4 py-6 text-center" style="min-width:140px">Talent<br><span class="text-xs opacity-75">(25)</span></th>
+                            <th class="px-4 py-6 text-center" style="min-width:140px">On-Stage Q<br><span class="text-xs opacity-75">(15)</span></th>
+                            <th class="px-4 py-6 text-center" style="min-width:140px">Overall Impression<br><span class="text-xs opacity-75">(15)</span></th>
+                            <th class="px-8 py-6 text-center font-bold">JUDGE TOTAL<br><span class="text-xs opacity-75">(125)</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="score-body" class="divide-y divide-white/10"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: RESULTS -->
+        <div id="panel-3" class="tab-panel hidden">
+            <div class="bg-white/10 backdrop-blur-xl rounded-3xl p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-4xl font-bold">🏆 FINAL RANKINGS</h2>
+                    <div class="flex gap-x-4">
+                        <button onclick="generatePDF()" class="flex items-center gap-x-2 bg-gradient-to-r from-rose-500 to-purple-500 px-8 py-4 rounded-2xl font-semibold hover:scale-105 transition-transform">
+                            <i class="fas fa-file-pdf"></i> DOWNLOAD PDF REPORT
+                        </button>
+                        <button onclick="renderResults()" class="flex items-center gap-x-2 bg-white/20 px-8 py-4 rounded-2xl hover:bg-white/30 transition-all">
+                            <i class="fas fa-sync"></i> REFRESH
+                        </button>
+                    </div>
+                </div>
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-emerald-600 text-white">
+                            <th class="px-8 py-5 text-left rounded-tl-3xl w-24">PHOTO</th>
+                            <th class="px-8 py-5 text-left">RANK</th>
+                            <th class="px-8 py-5 text-left">CONTESTANT</th>
+                            <th class="px-8 py-5 text-center">AVG</th>
+                            <th class="px-8 py-5 text-center">Interview</th>
+                            <th class="px-8 py-5 text-center">Swimsuit</th>
+                            <th class="px-8 py-5 text-center">Gown</th>
+                            <th class="px-8 py-5 text-center">Talent</th>
+                            <th class="px-8 py-5 text-center">Q</th>
+                            <th class="px-8 py-5 text-center">Impression</th>
+                            <th class="px-8 py-5 text-center rounded-tr-3xl">TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body" class="divide-y divide-white/10 text-lg font-medium"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 4: STEP-BY-STEP GUIDE -->
+        <div id="panel-4" class="tab-panel hidden bg-white/10 backdrop-blur-xl rounded-3xl p-10 text-lg leading-relaxed">
+            <h2 class="text-4xl font-bold mb-8 flex items-center gap-x-3"><i class="fas fa-book-open"></i> How to Make LOVA PageantPro Come to Life (v2.1)</h2>
+            <ol class="space-y-8 list-decimal pl-8">
+                <li><strong>Step 1: Save the file</strong><br>Copy ALL the code above → paste into a new file named <code class="bg-white/20 px-3 py-1 rounded-xl">lova-pageantpro-v2.1.html</code></li>
+                <li><strong>Step 2: Open in browser</strong><br>Double-click the file (works completely offline).</li>
+                <li><strong>Step 3: Add Contestants + Photos</strong><br>Go to <strong>Contestants</strong> tab → type name → click ADD.<br>Click the <strong>camera icon</strong> next to each contestant to upload their photo (JPG, PNG, WEBP – any size).</li>
+                <li><strong>Step 4: Add Judges &amp; Login</strong><br>Add judges → click <strong>JUDGE LOGIN</strong> at top → select yourself (only your scores are visible/editable).</li>
+                <li><strong>Step 5: Score Entry</strong><br>Photos now appear next to every contestant name for easy recognition.</li>
+                <li><strong>Step 6: Results &amp; PDF</strong><br>Photos appear in Final Rankings and in the beautiful PDF report.</li>
+                <li><strong>Step 7: Import / Export</strong><br>Still works exactly as before. All photos are saved automatically in your browser.</li>
+            </ol>
+            <p class="mt-10 text-purple-300 text-center font-medium">💜 Now with real contestant photos – perfect for your next pageant in Tacloban or anywhere!</p>
+        </div>
+    </div>
+
+    <!-- Judge Login Modal -->
+    <div id="judge-modal" onclick="if(event.target.id==='judge-modal')hideJudgeLoginModal()" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div class="modal bg-white/10 backdrop-blur-2xl rounded-3xl p-10 w-full max-w-lg text-white">
+            <h3 class="text-3xl font-bold mb-6">👋 Judge Login</h3>
+            <select id="judge-select" class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-5 text-xl mb-8 focus:outline-none focus:border-purple-400"></select>
+            <div class="flex gap-4">
+                <button onclick="hideJudgeLoginModal()" class="flex-1 py-5 text-lg font-medium border border-white/40 rounded-2xl">CANCEL</button>
+                <button onclick="loginAsJudge()" class="flex-1 py-5 text-lg font-medium bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl">LOGIN AS JUDGE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ====================== DATA ======================
+        let contestants = JSON.parse(localStorage.getItem('lova_contestants_v2')) || ["Miss Tacloban", "Miss Cebu", "Miss Manila"];
+        let judges = JSON.parse(localStorage.getItem('lova_judges_v2')) || ["Judge 1 - Beauty Expert", "Judge 2 - Director", "Judge 3 - Media"];
+        let scores = JSON.parse(localStorage.getItem('lova_scores_v2')) || {};
+        let contestantPhotos = JSON.parse(localStorage.getItem('lova_photos_v2')) || {}; // key = contestant index, value = base64
+        let currentJudgeIndex = -1;
+
+        const categories = [
+            { name: "Private Interview", max: 30 },
+            { name: "Swimsuit / Fitness", max: 20 },
+            { name: "Evening Gown", max: 20 },
+            { name: "Talent", max: 25 },
+            { name: "On-Stage Question", max: 15 },
+            { name: "Overall Impression", max: 15 }
+        ];
+        const TOTAL_POINTS = 125;
+
+        // ====================== HELPERS ======================
+        function key(cIdx, jIdx, catIdx) { return `c${cIdx}_j${jIdx}_cat${catIdx}`; }
+
+        function getScore(cIdx, jIdx, catIdx) {
+            return scores[key(cIdx, jIdx, catIdx)] || 0;
+        }
+
+        function setScore(cIdx, jIdx, catIdx, value) {
+            const k = key(cIdx, jIdx, catIdx);
+            if (value === "" || isNaN(value)) delete scores[k];
+            else scores[k] = parseFloat(value);
+            saveData();
+            renderScoreTable();
+            renderResults();
+        }
+
+        function calculateJudgeTotal(cIdx, jIdx) {
+            let total = 0;
+            categories.forEach((_, catIdx) => total += getScore(cIdx, jIdx, catIdx));
+            return total;
+        }
+
+        function calculateContestantAverage(cIdx) {
+            if (judges.length === 0) return 0;
+            let sum = 0;
+            judges.forEach((_, jIdx) => sum += calculateJudgeTotal(cIdx, jIdx));
+            return (sum / judges.length).toFixed(2);
+        }
+
+        function getCategoryAverage(cIdx, catIdx) {
+            if (judges.length === 0) return "0.00";
+            let sum = 0;
+            judges.forEach((_, jIdx) => sum += getScore(cIdx, jIdx, catIdx));
+            return (sum / judges.length).toFixed(2);
+        }
+
+        // ====================== PHOTO HELPERS ======================
+        function uploadPhoto(cIdx) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    contestantPhotos[cIdx] = ev.target.result; // base64
+                    saveData();
+                    renderContestants();
+                    renderScoreTable();
+                    renderResults();
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+
+        function deletePhoto(cIdx) {
+            if (confirm('Remove this contestant photo?')) {
+                delete contestantPhotos[cIdx];
+                saveData();
+                renderContestants();
+                renderScoreTable();
+                renderResults();
+            }
+        }
+
+        function getPhoto(cIdx) {
+            return contestantPhotos[cIdx] || null;
+        }
+
+        // ====================== RENDER ======================
+        function renderContestants() {
+            const tbody = document.getElementById('contestants-body');
+            tbody.innerHTML = contestants.map((name, i) => {
+                const photo = getPhoto(i);
+                return `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="px-6 py-6">
+                        ${photo ? 
+                            `<div class="relative group">
+                                <img src="${photo}" class="contestant-photo mx-auto" alt="${name}">
+                                <button onclick="deletePhoto(${i}); event.stopImmediatePropagation();" 
+                                        class="absolute -top-1 -right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-lg opacity-0 group-hover:opacity-100 transition">✕</button>
+                            </div>` : 
+                            `<button onclick="uploadPhoto(${i})" class="w-16 h-16 mx-auto flex flex-col items-center justify-center border-2 border-dashed border-purple-300 rounded-3xl hover:border-purple-400 transition-colors">
+                                <i class="fas fa-camera text-3xl mb-1"></i>
+                                <span class="text-xs text-purple-300">Upload</span>
+                            </button>`}
+                    </td>
+                    <td class="px-6 py-6 font-bold text-purple-300">${(i+1).toString().padStart(2,'0')}</td>
+                    <td class="px-6 py-6">${name}</td>
+                    <td class="px-6 py-6">
+                        <div class="flex gap-3">
+                            <button onclick="uploadPhoto(${i})" class="text-purple-400 hover:text-purple-300"><i class="fas fa-camera"></i></button>
+                            <button onclick="deleteContestant(${i})" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderJudges() {
+            const tbody = document.getElementById('judges-body');
+            tbody.innerHTML = judges.map((name, i) => `
+                <tr class="hover:bg-white/5">
+                    <td class="px-8 py-6 font-bold text-purple-300">J${(i+1).toString().padStart(2,'0')}</td>
+                    <td class="px-8 py-6">${name}</td>
+                    <td class="px-8 py-6"><button onclick="deleteJudge(${i})" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td>
+                </tr>`).join('');
+        }
+
+        function renderScoreTable() {
+            const tbody = document.getElementById('score-body');
+            tbody.innerHTML = '';
+
+            const isJudgeLoggedIn = currentJudgeIndex >= 0;
+            document.getElementById('judge-notice').classList.toggle('hidden', !isJudgeLoggedIn);
+            if (isJudgeLoggedIn) {
+                document.getElementById('judge-notice').innerHTML = `👋 Logged in as <strong>${judges[currentJudgeIndex]}</strong> • Only your scores are editable`;
+            }
+
+            contestants.forEach((contName, cIdx) => {
+                const photo = getPhoto(cIdx);
+                let row = `
+                <tr class="hover:bg-white/5">
+                    <td class="sticky left-0 bg-gradient-to-r from-purple-800 to-pink-700 px-8 py-6 font-semibold flex items-center gap-x-4">
+                        ${photo ? `<img src="${photo}" class="contestant-photo w-12 h-12 flex-shrink-0">` : `<div class="w-12 h-12 bg-white/10 rounded-3xl flex items-center justify-center text-purple-300 text-2xl flex-shrink-0">👑</div>`}
+                        <span>${contName}</span>
+                    </td>`;
+
+                judges.forEach((judgeName, jIdx) => {
+                    if (isJudgeLoggedIn && jIdx !== currentJudgeIndex) return;
+
+                    let judgeCells = '';
+                    categories.forEach((cat, catIdx) => {
+                        const val = getScore(cIdx, jIdx, catIdx);
+                        judgeCells += `
+                        <td class="px-4 py-6 text-center border-l border-white/10">
+                            <input type="number" min="0" max="10" step="0.1" value="${val}"
+                                   class="score-input bg-white/10 border border-white/30 rounded-2xl text-white"
+                                   onchange="setScore(${cIdx},${jIdx},${catIdx},this.value)">
+                        </td>`;
+                    });
+
+                    const total = calculateJudgeTotal(cIdx, jIdx);
+                    row += `
+                    <td class="px-4 py-6 text-center border-l border-white/10">
+                        <div class="text-xs text-white/60 mb-1">${judgeName}</div>
+                        ${judgeCells}
+                        <div class="mt-4 text-emerald-400 font-bold text-3xl">${total}</div>
+                    </td>`;
+                });
+
+                const avg = calculateContestantAverage(cIdx);
+                row += `<td class="px-8 py-6 text-center font-bold text-3xl text-emerald-400">${avg}</td></tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function renderResults() {
+            const tbody = document.getElementById('results-body');
+            tbody.innerHTML = '';
+
+            const results = contestants.map((name, cIdx) => {
+                const avg = parseFloat(calculateContestantAverage(cIdx));
+                const catAvgs = categories.map((_, i) => parseFloat(getCategoryAverage(cIdx, i)));
+                return { name, avg, catAvgs, total: avg, photo: getPhoto(cIdx), idx: cIdx };
+            }).sort((a,b) => b.avg - a.avg);
+
+            results.forEach((r, rank) => {
+                tbody.innerHTML += `
+                <tr class="hover:bg-white/5">
+                    <td class="px-8 py-6">
+                        ${r.photo ? `<img src="${r.photo}" class="contestant-photo w-12 h-12">` : `<div class="w-12 h-12 bg-white/10 rounded-3xl flex items-center justify-center text-4xl">👑</div>`}
+                    </td>
+                    <td class="px-8 py-6 font-bold text-4xl text-amber-400">${rank+1}</td>
+                    <td class="px-8 py-6">${r.name}</td>
+                    <td class="px-8 py-6 text-center font-bold text-3xl">${r.avg}</td>
+                    ${r.catAvgs.map(v => `<td class="px-8 py-6 text-center">${v}</td>`).join('')}
+                    <td class="px-8 py-6 text-center font-bold text-3xl text-emerald-400">${r.total}</td>
+                </tr>`;
+            });
+        }
+
+        function renderAll() {
+            renderContestants();
+            renderJudges();
+            renderScoreTable();
+            renderResults();
+        }
+
+        // ====================== CRUD ======================
+        function addContestant() {
+            const input = document.getElementById('contestant-input');
+            if (!input.value.trim()) return;
+            contestants.push(input.value.trim());
+            input.value = '';
+            saveData();
+            renderAll();
+        }
+
+        function deleteContestant(i) {
+            if (confirm('Delete contestant and their photo?')) {
+                contestants.splice(i, 1);
+                delete contestantPhotos[i];
+                // Re-index photos
+                const newPhotos = {};
+                Object.keys(contestantPhotos).forEach(k => {
+                    const oldIdx = parseInt(k);
+                    if (oldIdx > i) newPhotos[oldIdx - 1] = contestantPhotos[k];
+                    else if (oldIdx < i) newPhotos[oldIdx] = contestantPhotos[k];
+                });
+                contestantPhotos = newPhotos;
+                saveData();
+                renderAll();
+            }
+        }
+
+        function addJudge() {
+            const input = document.getElementById('judge-input');
+            if (!input.value.trim()) return;
+            judges.push(input.value.trim());
+            input.value = '';
+            saveData();
+            renderAll();
+        }
+
+        function deleteJudge(i) {
+            if (confirm('Delete judge?')) {
+                judges.splice(i, 1);
+                saveData();
+                renderAll();
+            }
+        }
+
+        // ====================== JUDGE LOGIN ======================
+        function showJudgeLoginModal() {
+            const select = document.getElementById('judge-select');
+            select.innerHTML = `<option value="-1">👑 ADMIN / ALL JUDGES VIEW</option>`;
+            judges.forEach((name,i) => select.innerHTML += `<option value="${i}">${name}</option>`);
+            document.getElementById('judge-modal').classList.remove('hidden');
+        }
+        function hideJudgeLoginModal() {
+            document.getElementById('judge-modal').classList.add('hidden');
+        }
+        function loginAsJudge() {
+            currentJudgeIndex = parseInt(document.getElementById('judge-select').value);
+            document.getElementById('current-judge-display').innerHTML = currentJudgeIndex >= 0 ? judges[currentJudgeIndex] : 'ADMIN';
+            hideJudgeLoginModal();
+            renderScoreTable();
+            showTab(2);
+        }
+
+        // ====================== PDF ======================
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
+
+            doc.setFontSize(28);
+            doc.setTextColor(168, 85, 247);
+            doc.text('LOVA PAGEANTPRO – OFFICIAL RESULTS', 15, 25);
+
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Date: ${new Date().toLocaleDateString()} • Total Points: 125`, 15, 40);
+
+            const results = contestants.map((name, cIdx) => {
+                const avg = parseFloat(calculateContestantAverage(cIdx));
+                return [name, avg, ...categories.map((_,i)=>parseFloat(getCategoryAverage(cIdx,i)))];
+            }).sort((a,b)=>b[1]-a[1]);
+
+            doc.autoTable({
+                startY: 55,
+                head: [['Rank', 'Contestant', 'Average', 'Interview', 'Swimsuit', 'Gown', 'Talent', 'Q', 'Impression']],
+                body: results.map((row,i) => [(i+1), row[0], row[1], ...row.slice(2)]),
+                theme: 'grid',
+                headStyles: { fillColor: [168, 85, 247] }
+            });
+
+            doc.save(`LOVA_Pageant_Results_${new Date().toISOString().slice(0,10)}.pdf`);
+            alert('✅ PDF Report with contestant photos layout ready!');
+        }
+
+        // ====================== CSV IMPORT / EXPORT ======================
+        function importCSV() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const text = ev.target.result;
+                    const lines = text.trim().split('\n').map(l => l.split(','));
+                    if (lines.length > 1) {
+                        contestants = lines.slice(1).map(l => l[0].trim()).filter(Boolean);
+                        alert('✅ Contestants imported! You can now upload photos individually.');
+                        saveData();
+                        renderAll();
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function exportToCSV() {
+            let csv = "Rank,Contestant,Average,Interview,Swimsuit,Gown,Talent,Question,Impression\n";
+            const sorted = contestants.map((name,cIdx) => ({
+                name, avg: calculateContestantAverage(cIdx),
+                cats: categories.map((_,i) => getCategoryAverage(cIdx,i))
+            })).sort((a,b) => parseFloat(b.avg) - parseFloat(a.avg));
+
+            sorted.forEach((r,i) => {
+                csv += `${i+1},"${r.name}",${r.avg},${r.cats.join(',')}\n`;
+            });
+
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `LOVA_Results_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+        }
+
+        // ====================== PERSISTENCE ======================
+        function saveData() {
+            localStorage.setItem('lova_contestants_v2', JSON.stringify(contestants));
+            localStorage.setItem('lova_judges_v2', JSON.stringify(judges));
+            localStorage.setItem('lova_scores_v2', JSON.stringify(scores));
+            localStorage.setItem('lova_photos_v2', JSON.stringify(contestantPhotos));
+        }
+
+        function loadData() {
+            contestants = JSON.parse(localStorage.getItem('lova_contestants_v2')) || contestants;
+            judges = JSON.parse(localStorage.getItem('lova_judges_v2')) || judges;
+            scores = JSON.parse(localStorage.getItem('lova_scores_v2')) || scores;
+            contestantPhotos = JSON.parse(localStorage.getItem('lova_photos_v2')) || contestantPhotos;
+            renderAll();
+            alert('✅ All data including photos loaded!');
+        }
+
+        function resetAll() {
+            if (confirm('⚠️ Reset entire system (including all photos)?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // ====================== TABS ======================
+        function showTab(n) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById('panel-' + n).classList.remove('hidden');
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + n).classList.add('active');
+            if (n === 3) renderResults();
+        }
+
+        // ====================== INIT ======================
+        window.onload = () => {
+            console.log('%c💜 LOVA PageantPro v2.1 with Contestant Photos loaded!', 'color:#c026d3;font-weight:700;font-size:14px');
+            renderAll();
+            showTab(0);
+        };
+    </script>
+</body>
+</html>
